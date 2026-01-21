@@ -72,11 +72,16 @@ bash setup_env.sh
 #
 # --------------------------------------------------------------------------------------------------------------------->
 ## How to use
-### Step1: SimSiamのトレーニング
-CIFAR-10でSimSiamを自己教師あり学習し、各エポックでk-NNの検証とTensorBoardログ、学習曲線の画像出力、チェックポイントの保存まで行う.  
-VRAMは5.3GBほど消費する。  
+### Step1: SimSiam または PhiNet を選択して自己教師あり学習
+コマンド実行直後に実行するモデル名の入力を求められます。
+SimSiam : s（小文字） 
+PhiNet : p（小文字）
 
-epoch数はコマンドラインから変更できないため、`train_simsiam.py` の `epochs = 10` を直接編集する。  
+※ xphinet は実装途中のため 実行できません（コード上でも無効化しています）。
+
+※データセットとepoch数はコマンドラインから変更できないため、`train_simsiam.py` の `epochs = 10` などを直接編集する。  
+
+データセット（例：CIFAR-10）でSimSiamを自己教師あり学習し、各エポックでk-NNの検証とTensorBoardログ、学習曲線の画像出力、チェックポイントの保存まで行う.  
 
 ```shell
 python train_simsiam.py
@@ -88,7 +93,7 @@ tensorboard --logdir log
 # ブラウザで http://localhost:6006 を開く
 ```
 
-学習が終わると、result_figureフォルダに以下が生成される.  
+学習が終わると、result_figureフォルダに以下が生成される. （※データセットに関係なく，ファイル名がCIFAR10になっています）
 - `CIFAR10_resnet18_loss.png`: 学習過程におけるコサイン類似度の損失の推移 
 - `CIFAR10_resnet18_kNN.png`: 学習過程におけるk-NN精度の推移 
 
