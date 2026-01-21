@@ -41,13 +41,18 @@ class SimSiam(nn.Module):
         #                                 nn.BatchNorm1d(dim, affine=False)) # output layer
         # self.encoder.fc[6].bias.requires_grad = False # hack: not use bias as it is followed by BN
 
-        '''build a 2-layer projector'''
+        '''build a 3-layer projector (paper default)'''
         prev_dim = self.encoder.fc.weight.shape[1]
-        self.encoder.fc = nn.Sequential(nn.Linear(prev_dim, prev_dim, bias=False),
-                                        nn.BatchNorm1d(prev_dim),
-                                        nn.ReLU(inplace=True), # first layer
-                                        self.encoder.fc,
-                                        nn.BatchNorm1d(dim, affine=False)) # output layer
+        self.encoder.fc = nn.Sequential(
+            nn.Linear(prev_dim, prev_dim, bias=False),
+            nn.BatchNorm1d(prev_dim),
+            nn.ReLU(inplace=True),  # first layer
+            nn.Linear(prev_dim, prev_dim, bias=False),
+            nn.BatchNorm1d(prev_dim),
+            nn.ReLU(inplace=True),  # second layer
+            self.encoder.fc,
+            nn.BatchNorm1d(dim, affine=False),  # output layer
+        )
 
 
         # build a 2-layer predictor
@@ -96,9 +101,12 @@ class PhiNet(nn.Module):
         self.encoder.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         self.encoder.maxpool = nn.Identity()
 
-        # projector（SimSiamと同様の2層MLP+BN）
+        # projector（SimSiamと同様の3層MLP+BN）
         prev_dim = self.encoder.fc.weight.shape[1]
         self.encoder.fc = nn.Sequential(
+            nn.Linear(prev_dim, prev_dim, bias=False),
+            nn.BatchNorm1d(prev_dim),
+            nn.ReLU(inplace=True),
             nn.Linear(prev_dim, prev_dim, bias=False),
             nn.BatchNorm1d(prev_dim),
             nn.ReLU(inplace=True),
@@ -175,6 +183,9 @@ class XPhiNet(nn.Module):
 
         prev_dim = self.encoder.fc.weight.shape[1]
         self.encoder.fc = nn.Sequential(
+            nn.Linear(prev_dim, prev_dim, bias=False),
+            nn.BatchNorm1d(prev_dim),
+            nn.ReLU(inplace=True),
             nn.Linear(prev_dim, prev_dim, bias=False),
             nn.BatchNorm1d(prev_dim),
             nn.ReLU(inplace=True),
