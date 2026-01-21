@@ -5,66 +5,7 @@
 # --------------------------------------------------------------------------------------------------------------------->
 # em_simsiam
 <!----------------------------------------------------------------------------------------------------------------------
-#
-#   Description
-#
-# --------------------------------------------------------------------------------------------------------------------->
-Customized repository for [SimSiam](https://github.com/facebookresearch/simsiam) for Emergent System Lab.  
 
-
-*   Maintainer: Shoichi Hasegawa ([hasegawa.shoichi@em.ci.ritsumei.ac.jp](mailto:hasegawa.shoichi@em.ci.ritsumei.ac.jp)).
-*   Author: Taichi Sakaguchi ([sakaguchi.taichi@em.ci.ritsumei.ac.jp](mailto:sakaguchi.taichi@em.ci.ritsumei.ac.jp)).
-
-<!----------------------------------------------------------------------------------------------------------------------
-#
-#   Table of Contents
-#
-# --------------------------------------------------------------------------------------------------------------------->
-**Table of Contents:**
-*   [Requirements](#requirements)
-*   [Getting Started](#getting-started)
-*   [How to use](#how-to-use)
-*   [Programs](#programs)
-*   [References](#references)
-
-<!----------------------------------------------------------------------------------------------------------------------
-#
-#   Requirement
-#
-# --------------------------------------------------------------------------------------------------------------------->
-## Requirements
-* Required
-    * Ubuntu: 20.04  
-    * ROS: Noetic  
-    * Python: 3.8
-    * pytorch>=1.8
-
-* Confirmed Condition
-```
-Ubuntu: 20.04LTS
-CUDA: 11.2
-NVIDIA driver: 570.133.20
-ROS: Noetic  
-Python: 3.8.10  
-torch: 1.9.1+cu111
-torchvision: 0.10.1+cu111
-```
-
-<!----------------------------------------------------------------------------------------------------------------------
-#
-#   Getting Started
-#
-# --------------------------------------------------------------------------------------------------------------------->
-## Getting Started
-```shell
-git clone https://gitlab.com/general-purpose-tools-in-emlab/self-supervised-learning/em_simsiam.git
-
-```
-
-```shell
-cd em_simsiam
-bash setup_env.sh
-```
 
 <!----------------------------------------------------------------------------------------------------------------------
 #
