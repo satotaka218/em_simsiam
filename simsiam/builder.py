@@ -10,6 +10,41 @@ import copy
 from typing import Optional
 
 
+class ProjectionMLP(nn.Module):
+    """Projection MLP used in SimSiam/PhiNet encoders."""
+
+    def __init__(self, in_dim: int, hidden_dim: int, out_dim: int, num_layers: int = 3):
+        super().__init__()
+        self.num_layers = int(num_layers)
+
+        self.layer1 = nn.Sequential(
+            nn.Linear(in_dim, hidden_dim, bias=False),
+            nn.BatchNorm1d(hidden_dim),
+            nn.ReLU(inplace=True),
+        )
+        self.layer2 = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim, bias=False),
+            nn.BatchNorm1d(hidden_dim),
+            nn.ReLU(inplace=True),
+        )
+        self.layer3 = nn.Sequential(
+            nn.Linear(hidden_dim, out_dim, bias=False),
+            nn.BatchNorm1d(out_dim, affine=False),
+        )
+
+    def forward(self, x):
+        if self.num_layers == 3:
+            x = self.layer1(x)
+            x = self.layer2(x)
+            x = self.layer3(x)
+        elif self.num_layers == 2:
+            x = self.layer1(x)
+            x = self.layer3(x)
+        else:
+            raise ValueError("num_layers must be 2 or 3")
+        return x
+
+
 class SimSiam(nn.Module):
     """
     Build a SimSiam model.
@@ -43,15 +78,11 @@ class SimSiam(nn.Module):
 
         '''build a 3-layer projector (paper default)'''
         prev_dim = self.encoder.fc.weight.shape[1]
-        self.encoder.fc = nn.Sequential(
-            nn.Linear(prev_dim, prev_dim, bias=False),
-            nn.BatchNorm1d(prev_dim),
-            nn.ReLU(inplace=True),  # first layer
-            nn.Linear(prev_dim, prev_dim, bias=False),
-            nn.BatchNorm1d(prev_dim),
-            nn.ReLU(inplace=True),  # second layer
-            self.encoder.fc,
-            nn.BatchNorm1d(dim, affine=False),  # output layer
+        self.encoder.fc = ProjectionMLP(
+            in_dim=prev_dim,
+            hidden_dim=prev_dim,
+            out_dim=dim,
+            num_layers=3,
         )
 
 
@@ -103,15 +134,11 @@ class PhiNet(nn.Module):
 
         # projector（SimSiamと同様の3層MLP+BN）
         prev_dim = self.encoder.fc.weight.shape[1]
-        self.encoder.fc = nn.Sequential(
-            nn.Linear(prev_dim, prev_dim, bias=False),
-            nn.BatchNorm1d(prev_dim),
-            nn.ReLU(inplace=True),
-            nn.Linear(prev_dim, prev_dim, bias=False),
-            nn.BatchNorm1d(prev_dim),
-            nn.ReLU(inplace=True),
-            self.encoder.fc,
-            nn.BatchNorm1d(dim, affine=False)
+        self.encoder.fc = ProjectionMLP(
+            in_dim=prev_dim,
+            hidden_dim=prev_dim,
+            out_dim=dim,
+            num_layers=3,
         )
 
         # ---- predictor h（SimSiamと同じ2層MLP）----
@@ -182,15 +209,11 @@ class XPhiNet(nn.Module):
         self.encoder.maxpool = nn.Identity()
 
         prev_dim = self.encoder.fc.weight.shape[1]
-        self.encoder.fc = nn.Sequential(
-            nn.Linear(prev_dim, prev_dim, bias=False),
-            nn.BatchNorm1d(prev_dim),
-            nn.ReLU(inplace=True),
-            nn.Linear(prev_dim, prev_dim, bias=False),
-            nn.BatchNorm1d(prev_dim),
-            nn.ReLU(inplace=True),
-            self.encoder.fc,
-            nn.BatchNorm1d(dim, affine=False),
+        self.encoder.fc = ProjectionMLP(
+            in_dim=prev_dim,
+            hidden_dim=prev_dim,
+            out_dim=dim,
+            num_layers=3,
         )
 
         # ---- predictor h ----
