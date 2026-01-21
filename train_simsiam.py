@@ -96,7 +96,9 @@ def main() :
     train_warmup_epochs = 10
     save_checkpoint_freq = 100
     device = 0 if torch.cuda.is_available() else 'cpu'
-    dataset_name = "stl10"
+    dataset_name = "stl10" #デーセセットの指定！！
+    
+    dataset_label = "STL10" if dataset_name == "stl10" else "CIFAR10"
     # dataset_name = "cifar10"
     normalization_parameter = normalization_parameter_dict['ImageNet'] if dataset_name == "stl10" else normalization_parameter_dict['CIFAR']
     torch.cuda.set_device(device)
@@ -344,7 +346,7 @@ def main() :
     plt.ylabel('Loss')
     plt.legend()
     plt.grid()
-    plt.savefig(os.path.join(run_dir, "CIFAR10_resnet18_loss.png"))
+    plt.savefig(os.path.join(run_dir, f"{dataset_label}_resnet18_loss.png"))
 
     fig = plt.figure()
     plt.plot([i for i in range(epochs)], kNN_acc_log, label="kNN acc")
@@ -354,7 +356,7 @@ def main() :
     plt.ylim((0, 100))
     plt.legend()
     plt.grid()
-    plt.savefig(os.path.join(run_dir, "CIFAR10_resnet18_kNN.png"))
+    plt.savefig(os.path.join(run_dir, f"{dataset_label}_resnet18_kNN.png"))
 
 
 
@@ -552,7 +554,7 @@ def tensorbord_visualizer(writer: SummaryWriter,
 #
 # ==================================================================================================================
 
-def save_checkpoint(state, is_best, filename='./checkpoint/CIFAR10_checkpoint.pth.tar'):
+def save_checkpoint(state, is_best, filename='./checkpoint/checkpoint.pth.tar'):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     torch.save(state, filename)
     if is_best:
