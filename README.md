@@ -78,7 +78,6 @@ SimSiam : s（小文字）
 PhiNet : p（小文字）
 
 ※ xphinet は実装途中のため 実行できません（コード上でも無効化しています）。
-
 ※データセットとepoch数はコマンドラインから変更できないため、`train_simsiam.py` の `epochs = 10` などを直接編集する。  
 
 データセット（例：CIFAR-10）でSimSiamを自己教師あり学習し、各エポックでk-NNの検証とTensorBoardログ、学習曲線の画像出力、チェックポイントの保存まで行う.  
@@ -86,6 +85,8 @@ PhiNet : p（小文字）
 ```shell
 python train_simsiam.py
 ```
+起動後に `phinet` または `simsiam` を入力して学習モデルを選択する。  
+X-PhiNet は実装を開始したが未完成のため、現状は実行できない。 
 
 ```shell
 # 学習の様子を確認
@@ -94,13 +95,14 @@ tensorboard --logdir log
 ```
 
 学習が終わると、result_figureフォルダに以下が生成される. （※データセットに関係なく，ファイル名がCIFAR10になっています）
-- `CIFAR10_resnet18_loss.png`: 学習過程におけるコサイン類似度の損失の推移 
-- `CIFAR10_resnet18_kNN.png`: 学習過程におけるk-NN精度の推移 
+- `{DATASET}_resnet18_loss.png`: 学習過程におけるコサイン類似度の損失の推移  
+- `{DATASET}_resnet18_kNN.png`: 学習過程におけるk-NN精度の推移  
 
-dataフォルダにはCIFAR-10のデータセット、logフォルダにはTensorBoardのログデータが入る。  
+`{DATASET}` は `STL10` または `CIFAR10`。  
+dataフォルダにはデータセット、logフォルダにはTensorBoardのログデータが入る。  
 
 
-### Step2: SimSiamとResNetを経由して得たCIFAR-10の特徴量をK-means法でクラスタリングし、似た画像がどのように集まっているか可視化
+### Step2: SimSiam　ｏｒ　ＰｈｉＮｅｔとResNetを経由して得た特徴量をK-means法でクラスタリングし、似た画像がどのように集まっているか可視化
 
 ```shell
 python k_means.py
@@ -119,19 +121,19 @@ python k_means.py
 Terminalには、Adjusted Rand Index (ARI) や主成分分析の結果の値が示されている。  
 - ARI: クラスタリングの性能評価に使用されるもの. 1は完全一致、0は偶然レベルの一致、0より下は偶然以下。
 
-### Step3: CIFAR-10で学習したSimSiamモデルの中間特徴を可視化し、画像の注目領域を可視化
+### Step3: 学習済みモデルの中間特徴を可視化し、画像の注目領域を可視化
 ```shell
 python simsiam_attention_map.py
 ```
 
-実行するとcifar_attention_mapフォルダに、CIFAR-10のtest画像について、(1) 元画像、(2) チャネル平均の活性マップ、(3) 活性で画素を重み付けした合成画像が保存される.  
+実行するとcifar_attention_mapフォルダに、テスト画像について、(1) 元画像、(2) チャネル平均の活性マップ、(3) 活性で画素を重み付けした合成画像が保存される.   
 
 ### おまけ
 ```shell
 python binary2image.py
 ```
 
-CIFAR-10データセットのバイナリ形式から実際のPNG画像をファイル出力する変換するコード。
+データセットのバイナリ形式から実際のPNG画像をファイル出力する変換するコード。
 
 
 <!----------------------------------------------------------------------------------------------------------------------
