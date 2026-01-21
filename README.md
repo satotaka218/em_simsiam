@@ -18,8 +18,9 @@
 SimSiam : s（小文字） 
 PhiNet : p（小文字）
 
-※ xphinet は実装途中のため 実行できません（コード上でも無効化しています）。
-※データセットとepoch数はコマンドラインから変更できないため、`train_simsiam.py` の `epochs = 10` と`dataset = ??` などを直接編集する。  
+※ xphinet は実装途中のため 実行できません（コード上でも無効化しています）．
+
+※データセットとepoch数はコマンドラインから変更できないため，`train_simsiam.py` の `epochs = 10` と`dataset = ??` などを直接編集する．
 
 データセット（例：CIFAR-10）でSimSiamを自己教師あり学習し、各エポックでk-NNの検証とTensorBoardログ、学習曲線の画像出力、チェックポイントの保存まで行う.  
 
