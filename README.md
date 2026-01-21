@@ -35,7 +35,7 @@ tensorboard --logdir log
 # ブラウザで http://localhost:6006 を開く
 ```
 
-学習が終わると、result_figureフォルダに以下が生成される. （※データセットに関係なく，ファイル名がCIFAR10になっています）
+学習が終わると、result_figureフォルダに以下が生成される. （※1/21より以前のコードではデータセットに関係なく，ファイル名がCIFAR10になっています）
 - `{DATASET}_resnet18_loss.png`: 学習過程におけるコサイン類似度の損失の推移  
 - `{DATASET}_resnet18_kNN.png`: 学習過程におけるk-NN精度の推移  
 
