@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python
 # Copyright (c) Facebook, Inc. and its affiliates.
 # All rights reserved.
@@ -40,13 +41,13 @@ import torchvision.models as models
 import torchvision
 from torch.utils.tensorboard import SummaryWriter
 
-sys.path.append("/root/Fetch/catkin_ws/src/em_simsiam/simsiam/")
+sys.path.append("/root/Fetch/catkin_ws/src/em_phinet/simsiam/")
 import simsiam.loader
 from simsiam.loader import Gaussian_Noise
 import simsiam.builder
 from simsiam.validation import KNNValidation
 
-sys.path.append("/root/Fetch/catkin_ws/src/em_simsiam/utils/")
+sys.path.append("/root/Fetch/catkin_ws/src/em_phinet/utils/")
 from utils import ProgressMeter, AverageMeter, adjust_learning_rate
 from dataset_Simsiam import SimSiamDataset
 from dataset_Simsiam import Random_Rotation
@@ -80,12 +81,13 @@ def main() :
     # ------------------------------------------------ #
 
     epochs = 800 #epoch数ここ変える！！！
-    micro_batch_size = 256
-    accum_steps = 4
+    micro_batch_size = 1024
+    accum_steps = 1
     batch_size = micro_batch_size
     # default_lr = 0.1
     # init_lr = default_lr * batch_size/256
-    init_lr = 0.03
+    # init_lr = 0.03
+    init_lr = 0.03 * (batch_size * accum_steps) / 256
     weight_decay = 1e-4
     momentum = 0.9
     basemodel = 'resnet18'
@@ -95,13 +97,16 @@ def main() :
     print_freq = 50
     train_warmup_epochs = 10
     save_checkpoint_freq = 100
-    device = 0 if torch.cuda.is_available() else 'cpu'
+    # device = 0 if torch.cuda.is_available() else 'cpu'
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == "cuda":
+        torch.cuda.set_device(0)
     dataset_name = "stl10" #デーセセットの指定！！
     
     dataset_label = "STL10" if dataset_name == "stl10" else "CIFAR10"
     # dataset_name = "cifar10"
     normalization_parameter = normalization_parameter_dict['ImageNet'] if dataset_name == "stl10" else normalization_parameter_dict['CIFAR']
-    torch.cuda.set_device(device)
+    # torch.cuda.set_device(device)
     fp_16 = True
     scalar = torch.cuda.amp.GradScaler() # setting for FP16
     # ------------------------------------------------ #
@@ -129,8 +134,8 @@ def main() :
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    cudnn.deterministic = True
-    cudnn.benchmark = False
+    cudnn.deterministic = False
+    cudnn.benchmark = True
 
     lambda_sim2 = 0.0      # Sim-1のみ
     sim2_loss_type = "mse" # "mse" or "cos"
@@ -172,14 +177,18 @@ def main() :
     criterion = nn.CosineSimilarity(dim = 1)
     optimizer = torch.optim.SGD(model.parameters(), lr = init_lr, momentum=momentum, weight_decay=weight_decay)
 
-    model.cuda(device=device)
-    criterion.cuda(device = device)
+    # model.cuda(device=device)
+    # criterion.cuda(device = device)
+    model = model.to(device)
+    model = torch.nn.DataParallel(model)
+    criterion = criterion.to(device)
 
     # ------------------------------------------------ #
     #   data loading code
     # ------------------------------------------------ #
 
-    input_size = 96 if dataset_name == "stl10" else 32
+    # input_size = 96 if dataset_name == "stl10" else 32
+    input_size = 32
     '''data augmentation method'''
     augumentation = [
         transforms.RandomResizedCrop(input_size, scale=(0.2, 1.0)),
@@ -200,6 +209,7 @@ def main() :
         strong_transform = transforms.Compose(augumentation)
 
         third_transform = transforms.Compose([
+            transforms.RandomResizedCrop(input_size, scale=(0.2, 1.0)),
             transforms.ToTensor(),
             transforms.Normalize(
                 mean=normalization_parameter[0],
@@ -282,7 +292,7 @@ def main() :
                 optimizer=optimizer, epoch=epoch,
                 method=method, lambda_sim2=lambda_sim2, sim2_loss_type=sim2_loss_type,
                 ema_beta=ema_beta,
-                scalar=scalar, print_freq=print_freq, accum_steps=accum_steps
+                scalar=scalar, print_freq=print_freq, accum_steps=accum_steps, debug_first_batch=(epoch == 0)
             )
         else :
             loss_total, loss_sim1, loss_sim2 = train(
@@ -290,7 +300,7 @@ def main() :
                 optimizer=optimizer, epoch=epoch,
                 method=method, lambda_sim2=lambda_sim2, sim2_loss_type=sim2_loss_type,
                 ema_beta=ema_beta,
-                scalar=None, print_freq=print_freq, accum_steps=accum_steps
+                scalar=None, print_freq=print_freq, accum_steps=accum_steps, debug_first_batch=(epoch == 0)
             )
         
         loss_total_per_epoch.append(loss_total)
@@ -389,7 +399,7 @@ def adjust_learning_rate(optimizer, init_lr, epoch, epochs, warmup_epochs):
 
 def train(train_loader, device, model, criterion, optimizer, epoch,
           method="simsiam", lambda_sim2=0.0, sim2_loss_type="mse",
-          ema_beta=0.99,scalar=None, print_freq=50, accum_steps=1):
+          ema_beta=0.99,scalar=None, print_freq=50, accum_steps=1, debug_first_batch=False):
     """ visualize progress """
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
@@ -407,17 +417,22 @@ def train(train_loader, device, model, criterion, optimizer, epoch,
     end = time.time()
     num_batches = len(train_loader)
     optimizer.zero_grad()
-    for i, (images, _) in tenumerate(train_loader) :
+    for i, (images, _) in tenumerate(train_loader):
+        if debug_first_batch and i == 0:
+            print("[DEBUG] len(images) =", len(images))
+            for k in range(len(images)):
+                print(f"[DEBUG] images[{k}] shape =", tuple(images[k].shape), "dtype =", images[k].dtype, "device =", images[k].device)
+
         data_time.update(time.time() - end)
 
         images[0] = images[0].cuda(device, non_blocking=True)
         images[1] = images[1].cuda(device, non_blocking=True)
-        
+
         if method in ("phinet","xphinet"):
             images[2] = images[2].cuda(device, non_blocking=True)
 
         # compute output and loss
-        if scalar != None : 
+        if scalar != None :
             '''FP16'''
             with torch.cuda.amp.autocast():
                 if method in ("phinet","xphinet"):
@@ -433,7 +448,8 @@ def train(train_loader, device, model, criterion, optimizer, epoch,
                               "z2", tuple(z2.shape),
                               "y1", tuple(y1.shape),
                               "z0", tuple(z0.shape))
-                    
+                        print("[DEBUG] dtype:", "images[0] =", images[0].dtype, "h1 =", h1.dtype, "z2 =", z2.dtype)
+
                     # Sim-1（図(b)のSim-1 + SG-1）
                     loss_sim1 = -(criterion(h1, z2).mean() + criterion(h2, z1).mean()) * 0.5
 
@@ -484,8 +500,8 @@ def train(train_loader, device, model, criterion, optimizer, epoch,
                     print("[DEBUG] h1", tuple(h1.shape),
                           "z2", tuple(z2.shape),
                           "y1", tuple(y1.shape),
-                          "z0", tuple(z0.shape))  
-                
+                          "z0", tuple(z0.shape))
+
                 loss_sim1 = -(criterion(h1, z2).mean() + criterion(h2, z1).mean()) * 0.5
 
                 if sim2_loss_type == "mse":
