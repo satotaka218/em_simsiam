@@ -137,7 +137,7 @@ def main() :
     cudnn.deterministic = False
     cudnn.benchmark = True
 
-    lambda_sim2 = 0.0      # Sim-1のみ
+    lambda_sim2 = 1.0      # Sim-1 + Sim-2
     sim2_loss_type = "mse" # "mse" or "cos"
     ema_beta = 0.99  # X-PhiNet: encoder_long EMA係数
 
