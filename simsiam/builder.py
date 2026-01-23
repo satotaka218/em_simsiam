@@ -65,25 +65,25 @@ class SimSiam(nn.Module):
         self.encoder.maxpool = nn.Identity()
 
         '''build a 3-layer projector'''
-        # prev_dim = self.encoder.fc.weight.shape[1]
-        # self.encoder.fc = nn.Sequential(nn.Linear(prev_dim, prev_dim, bias=False),
-        #                                 nn.BatchNorm1d(prev_dim),
-        #                                 nn.ReLU(inplace=True), # first layer
-        #                                 nn.Linear(prev_dim, prev_dim, bias=False),
-        #                                 nn.BatchNorm1d(prev_dim),
-        #                                 nn.ReLU(inplace=True), # second layer
-        #                                 self.encoder.fc,
-        #                                 nn.BatchNorm1d(dim, affine=False)) # output layer
-        # self.encoder.fc[6].bias.requires_grad = False # hack: not use bias as it is followed by BN
+        prev_dim = self.encoder.fc.weight.shape[1]
+        self.encoder.fc = nn.Sequential(nn.Linear(prev_dim, prev_dim, bias=False),
+                                        nn.BatchNorm1d(prev_dim),
+                                        nn.ReLU(inplace=True), # first layer
+                                        nn.Linear(prev_dim, prev_dim, bias=False),
+                                        nn.BatchNorm1d(prev_dim),
+                                        nn.ReLU(inplace=True), # second layer
+                                        self.encoder.fc,
+                                        nn.BatchNorm1d(dim, affine=False)) # output layer
+        self.encoder.fc[6].bias.requires_grad = False # hack: not use bias as it is followed by BN
 
         '''build a 3-layer projector (paper default)'''
-        prev_dim = self.encoder.fc.weight.shape[1]
-        self.encoder.fc = ProjectionMLP(
-            in_dim=prev_dim,
-            hidden_dim=prev_dim,
-            out_dim=dim,
-            num_layers=3,
-        )
+        # prev_dim = self.encoder.fc.weight.shape[1]
+        # self.encoder.fc = ProjectionMLP(
+        #     in_dim=prev_dim,
+        #     hidden_dim=prev_dim,
+        #     out_dim=dim,
+        #     num_layers=3,
+        # )
 
 
         # build a 2-layer predictor
