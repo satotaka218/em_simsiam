@@ -83,10 +83,18 @@ class simsiam_Kmeans :
                 model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
                 model.maxpool = nn.Identity()
                 for old_key, value in state_dict.items() :
-                        new_key = old_key.replace('encoder.', '')
+                        if old_key.startswith('module.encoder.'):
+                            new_key = old_key.replace('module.encoder.', '')
+                        elif old_key.startswith('encoder.'):
+                            new_key = old_key.replace('encoder.', '')
+                        elif old_key.startswith('module.'):
+                            new_key = old_key.replace('module.', '')
+                        else:
+                            new_key = old_key
                         new_state_dict[new_key] = value
 
             msg = model.load_state_dict(new_state_dict, strict = False)
+            print(f'loaded keys: {len(new_state_dict)}; missing: {len(msg.missing_keys)}; unexpected: {len(msg.unexpected_keys)}')
             print('end loding '+ checkpoint_path)
         else:
             if ImageNet_flag:
@@ -233,7 +241,7 @@ def compress_tSNE(embeddings: np.ndarray, prototypes: np.ndarray, labels_of_data
 
     
 
-    class_label_names = ['airplane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+    class_label_names = ['airplane', 'bird', 'car', 'cat', 'deer', 'dog', 'horse', 'monkey', 'ship', 'truck']
 
     # visualize
     if dimension == 2 :
@@ -253,7 +261,7 @@ def compress_tSNE(embeddings: np.ndarray, prototypes: np.ndarray, labels_of_data
         #     plt.scatter(reduced_prototypes[i, 0], reduced_prototypes[i, 1], c = 'k', s = 50, marker= marker)
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0, fontsize=10)
         plt.tight_layout()
-        plt.savefig(f'{run_dir}/tsne_CIFAR10_100_ResNet18.png')
+        plt.savefig(f'{run_dir}/tsne_STL10_ResNet18.png')
         plt.show()
 
     else :
@@ -275,7 +283,7 @@ def compress_tSNE(embeddings: np.ndarray, prototypes: np.ndarray, labels_of_data
 
         # ax = Axes3D(fig)
         ax.scatter(reduced_embeddings[:, 0], reduced_embeddings[:, 1], reduced_embeddings[:, 2], c = labels_of_dataset, cmap = 'tab10', s = 5, alpha = 0.5)
-        plt.savefig(f'{run_dir}/CIFAR10_ResNet18_3D.png')
+        plt.savefig(f'{run_dir}/STL10_ResNet18_3D.png')
         plt.show()
 
 # ==================================================================================================================
@@ -290,7 +298,7 @@ def compress_PCA(embeddings: np.ndarray, labels_of_dataset: np.ndarray, dimensio
     pca.fit(embeddings)
     pca_result = pca.transform(embeddings)
 
-    class_label_names = ['airplane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+    class_label_names = ['airplane', 'bird', 'car', 'cat', 'deer', 'dog', 'horse', 'monkey', 'ship', 'truck']
     
     # ------------------------------------------------ #
     #   visualization code
@@ -324,7 +332,7 @@ def compress_PCA(embeddings: np.ndarray, labels_of_dataset: np.ndarray, dimensio
 
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0, fontsize=10)
         plt.tight_layout()
-        plt.savefig(f'{run_dir}/PCA_CIFAR10_ResNet18.png')
+        plt.savefig(f'{run_dir}/PCA_STL10_ResNet18.png')
         plt.show()
 
         print('第一主成分の寄与率: {}\n第二主成分の寄与率: {}\n第三種成分の寄与率: {}'.format(contribution_ratios[0], contribution_ratios[1], contribution_ratios[2]))
@@ -377,11 +385,13 @@ run_epochs = int(run_tag.split("_")[-1])
 run_dir = f'./result_figure/{run_tag}'
 os.makedirs(run_dir, exist_ok=True)
 
-normalization_parameter_dict = {'ImageNet': np.array([[0.485, 0.456, 0.406],[0.229, 0.224, 0.225]]), 
-                                'CIFAR': np.array([[0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010]])}
+normalization_parameter_dict = {
+    'ImageNet': np.array([[0.485, 0.456, 0.406],[0.229, 0.224, 0.225]]),
+    'STL10': np.array([[0.485, 0.456, 0.406],[0.229, 0.224, 0.225]]),
+}
 checkpoint_path_dict = {
     'ImageNet': './checkpoint/checkpoint_0099.pth.tar',
-    'CIFAR10': f'./checkpoint/{run_tag}/checkpoint_{run_epochs:04d}.pth.tar'
+    'STL10': f'./checkpoint/{run_tag}/checkpoint_{run_epochs:04d}.pth.tar'
 }
 
 def main() :
@@ -390,15 +400,15 @@ def main() :
     #   hyperparameter setting
     # ------------------------------------------------ #
 
-    checkpoint_path = 'CIFAR10'
+    checkpoint_path = 'STL10'
     ImageNet_flag = False
-    normalization_parameter = normalization_parameter_dict['CIFAR']
+    normalization_parameter = normalization_parameter_dict['STL10']
     device = 0 if torch.cuda.is_available() else 'cpu'
     torch.cuda.set_device(device)
     plot_dimension = 2
     pretrain = True
 
-    class_names = ['airplane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+    class_names = ['airplane', 'bird', 'car', 'cat', 'deer', 'dog', 'horse', 'monkey', 'ship', 'truck']
 
 
     # ------------------------------------------------ #
@@ -412,7 +422,7 @@ def main() :
     # ------------------------------------------------ #
 
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(normalization_parameter[0], normalization_parameter[1])])
-    validate_dataset = torchvision.datasets.CIFAR10(root = './data', train = False, download = True, transform = transform)
+    validate_dataset = torchvision.datasets.STL10(root = './data', split = 'test', download = True, transform = transform)
     validate_loader = torch.utils.data.DataLoader(validate_dataset, batch_size = 16, shuffle = False, num_workers=4, pin_memory=True, drop_last = True)
 
     # ------------------------------------------------ #
