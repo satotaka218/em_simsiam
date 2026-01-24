@@ -41,16 +41,14 @@ import torchvision.models as models
 import torchvision
 from torch.utils.tensorboard import SummaryWriter
 
-sys.path.append("/root/Fetch/catkin_ws/src/em_phinet/simsiam/")
 import simsiam.loader
 from simsiam.loader import Gaussian_Noise
 import simsiam.builder
 from simsiam.validation import KNNValidation
 
-sys.path.append("/root/Fetch/catkin_ws/src/em_phinet/utils/")
-from utils import ProgressMeter, AverageMeter, adjust_learning_rate
-from dataset_Simsiam import SimSiamDataset
-from dataset_Simsiam import Random_Rotation
+from utils.utils import ProgressMeter, AverageMeter, adjust_learning_rate
+from utils.dataset_Simsiam import SimSiamDataset
+from utils.dataset_Simsiam import Random_Rotation
 
 
 from tqdm.contrib import tenumerate
@@ -137,7 +135,7 @@ def main() :
     cudnn.deterministic = False
     cudnn.benchmark = True
 
-    lambda_sim2 = 1.0      # Sim-1 + Sim-2
+    lambda_sim2 = 1.0      # Sim-1+Sim-2
     sim2_loss_type = "mse" # "mse" or "cos"
     ema_beta = 0.99  # X-PhiNet: encoder_long EMA係数
 
