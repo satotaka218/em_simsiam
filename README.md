@@ -18,8 +18,7 @@
 SimSiam : s（小文字） 
 PhiNet : p（小文字）
 
-※ xphinet は実装途中のため 実行できません（コード上でも無効化しています）．
-
+==実行前に以下を修正してください==
 ※データセットとepoch数はコマンドラインから変更できないため，`train_simsiam.py` の `epochs = 800` と`dataset_name = "stl10"` などを直接編集する．
 
 データセット（例：CIFAR-10）でSimSiamを自己教師あり学習し、各エポックでk-NNの検証とTensorBoardログ、学習曲線の画像出力、チェックポイントの保存まで行う.  
@@ -27,7 +26,10 @@ PhiNet : p（小文字）
 ```shell
 python train_simsiam.py
 ```
-起動後に `phinet` または `simsiam` を入力して学習モデルを選択する（空入力はPhiNet）。  
+起動後に `phinet` または `simsiam` を入力して学習モデルを選択する（空入力はPhiNet）。
+コマンド実行直後に実行するモデル名の入力を求められます。
+SimSiam : s（小文字） 
+PhiNet : p（小文字）
 X-PhiNet は実装を開始したが未完成のため、現状は実行できない。 
 
 ```shell
