@@ -20,14 +20,14 @@ PhiNet : p（小文字）
 
 ※ xphinet は実装途中のため 実行できません（コード上でも無効化しています）．
 
-※データセットとepoch数はコマンドラインから変更できないため，`train_simsiam.py` の `epochs = 10` と`dataset = ??` などを直接編集する．
+※データセットとepoch数はコマンドラインから変更できないため，`train_simsiam.py` の `epochs = 800` と`dataset_name = "stl10"` などを直接編集する．
 
 データセット（例：CIFAR-10）でSimSiamを自己教師あり学習し、各エポックでk-NNの検証とTensorBoardログ、学習曲線の画像出力、チェックポイントの保存まで行う.  
 
 ```shell
 python train_simsiam.py
 ```
-起動後に `phinet` または `simsiam` を入力して学習モデルを選択する。  
+起動後に `phinet` または `simsiam` を入力して学習モデルを選択する（空入力はPhiNet）。  
 X-PhiNet は実装を開始したが未完成のため、現状は実行できない。 
 
 ```shell
@@ -36,12 +36,13 @@ tensorboard --logdir log
 # ブラウザで http://localhost:6006 を開く
 ```
 
-学習が終わると、result_figureフォルダに以下が生成される. （※1/21より以前のコードではデータセットに関係なく，ファイル名がCIFAR10になっています）
-- `{DATASET}_resnet18_loss.png`: 学習過程におけるコサイン類似度の損失の推移  
+学習が終わると、`result_figure/{Model}_{epochs}` に以下が生成される.  
+- `{DATASET}_resnet18_loss.png`: 学習過程における損失（loss/total, loss/sim1, loss/sim2）の推移
 - `{DATASET}_resnet18_kNN.png`: 学習過程におけるk-NN精度の推移  
 
 `{DATASET}` は `STL10` または `CIFAR10`。  
-dataフォルダにはデータセット、logフォルダにはTensorBoardのログデータが入る。  
+dataフォルダにはデータセット、`log/{Model}_{epochs}` にはTensorBoardのログデータが入る。  
+チェックポイントは `checkpoint/{Model}_{epochs}` に保存される。  
 
 
 ### Step2: SimSiam or PhiNetとResNetを経由して得た特徴量をK-means法でクラスタリングし、似た画像がどのように集まっているか可視化
@@ -50,14 +51,16 @@ dataフォルダにはデータセット、logフォルダにはTensorBoardの�
 python k_means.py
 ```
 
+起動時に `SimSiam_800` や `PhiNet_800` のようなRun tagを入力する。  
 処理が終わると、matplotlibで以下のグラフや画像表示される。  
 - 主成分分析 (principal component analysis (PCA)) における累積寄与率 (cumulative contribution rate): 各主成分の寄与率を大きい順に足し上げたもので、そこまでの主成分でデータの持っていた情報量がどのくらい説明されているかを示す。
 - PCAにおける各主成分の寄与率 (contribution rate of each principal component): ある主成分の固有値を表す情報が、データのすべての情報の中でどのくらいの割合を占めるかを表す。
 - PCAの結果を2次元散布図として可視化: SimSiamで得られた特徴量をPCAで次元圧縮し、各クラスごとに色分けして配置
 
 
-またresult_figureフォルダには、
-- tsne_CIFAR10_100_ResNet18.png: t-SNEの結果を2次元散布図として可視化したもの。
+また `result_figure/{RunTag}` には、
+- tsne_STL10_ResNet18.png: t-SNEの結果を2次元散布図として可視化したもの。
+- PCA_STL10_ResNet18.png: PCAの結果を2次元散布図として可視化したもの。
 - top_of_10.png: k-means法でクラスタリングを行った結果の代表画像 (各クラスタ中心に最も近いサンプル) をまとめたタイル画像. 各行が1つのクラスタを表し、その行に並ぶ10枚が「そのクラスタ中心に最も近い上位10枚の画像」.
 
 Terminalには、Adjusted Rand Index (ARI) や主成分分析の結果の値が示されている。  
@@ -68,7 +71,8 @@ Terminalには、Adjusted Rand Index (ARI) や主成分分析の結果の値が�
 python simsiam_attention_map.py
 ```
 
-実行するとcifar_attention_mapフォルダに、テスト画像について、(1) 元画像、(2) チャネル平均の活性マップ、(3) 活性で画素を重み付けした合成画像が保存される.   
+起動時に `SimSiam_800` や `PhiNet_800` のようなRun tagを入力する。  
+実行すると `result_figure/{RunTag}/cifar_attention_map` フォルダに、テスト画像について、(1) 元画像、(2) チャネル平均の活性マップ、(3) 活性で画素を重み付けした合成画像が保存される.   
 
 ### おまけ
 ```shell
@@ -87,7 +91,7 @@ python binary2image.py
 ## Programs
 
 - train_simsiam.py
-- k-means.py
+- k_means.py
 - simsiam_attention_map.py
 - binary2image.py
 - main_simsiam.py: Facebookが作ったSimSiamのPytorch実装したものでオリジナル。ImageNetなど大規模データでの学習を想定。今回は使用しない。単GPU非対応。
